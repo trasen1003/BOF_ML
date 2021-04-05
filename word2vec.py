@@ -1,13 +1,15 @@
+import copy
 import pygments
 from pygments.token import Token
 from pygments import lexers, highlight
 import os
+import gensim.models
 
 
 #tokens form file
 def extract_tokens(filename):
-    f = open(filename)
-    code_str = f.read()
+    f = open(filename,'rb')
+    code_str = f.read().decode(encoding = "UTF-8", errors ='replace')
     f.close()
     if code_str == None:
         return []
@@ -28,31 +30,50 @@ def extract_tokens(filename):
 
 
 #files to learn word2vec on
+dir_name = "train"
 files = []
-for elt in os.listdir("./samples"):
-    files.append("./samples/" + elt)
+for elt in os.listdir("./" + dir_name):
+    files.append("./" + dir_name + "/" + elt)
+
 
 
 class MyCorpus:
     """An iterator that yields sentences (lists of str)."""
+    def __init__(self,files):
+        self.files = files
 
     def __iter__(self):
-        for code in files:
+        for code in self.files:
             tokens = extract_tokens(code)
             if tokens != []:
                 yield tokens
 
-import gensim.models
 
-sentences = MyCorpus()
-model = gensim.models.Word2Vec(sentences=sentences)
+sentences = MyCorpus(files)
+if os.path.isfile("./saved_model"):
+    model = gensim.models.Word2Vec.load("./saved_model")
+else:
+    model = gensim.models.Word2Vec(min_count=1,sentences=sentences)
+    model.save("./saved_model")
 
+model_cp = copy.deepcopy(model)
+
+#print(model.wv.most_similar("print",topn = 10))
 for index, word in enumerate(model.wv.index_to_key):
-    if index == 10:
+    if index ==10:
         break
     print(f"word #{index}/{len(model.wv.index_to_key)} is {word}")
 print("done")
 
+for elt in os.listdir("./test") :
+    print("processing : ", elt)
+    sentences = MyCorpus(["./test/" + elt]) 
+    #print("before : ",len(model.wv))
+    model.build_vocab(list(sentences), update=True)
+    model.train([[sentences]], total_examples=1, epochs=1)
+    #print("after : ",len(model.wv))
+#word2vec ready to process elt at this point
+    model = copy.deepcopy(model_cp)
 
 
 ### 2D result representation ###
@@ -104,7 +125,8 @@ def plot_with_matplotlib(x_vals, y_vals, labels):
     plt.scatter(x_vals, y_vals)
 
     indices = list(range(len(labels)))
-    selected_indices = random.sample(indices, 100)
+    #selected_indices = random.sample(indices, 100)
+    selected_indices = indices
     for i in selected_indices:
         plt.annotate(labels[i], (x_vals[i], y_vals[i]))
     plt.show()
