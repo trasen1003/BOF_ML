@@ -29,13 +29,6 @@ def extract_tokens(filename):
         return names
 
 
-#files to learn word2vec on
-dir_name = "train"
-files = []
-for elt in os.listdir("./" + dir_name):
-    files.append("./" + dir_name + "/" + elt)
-
-
 
 class MyCorpus:
     """An iterator that yields sentences (lists of str)."""
@@ -48,32 +41,47 @@ class MyCorpus:
             if tokens != []:
                 yield tokens
 
+def get_model(dir_train = "train", force_train = False):
+    #files to learn word2vec on
+    files = []
+    for elt in os.listdir("./" + dir_train):
+        files.append("./" + dir_train + "/" + elt)
 
-sentences = MyCorpus(files)
-if os.path.isfile("./saved_model"):
-    model = gensim.models.Word2Vec.load("./saved_model")
-else:
-    model = gensim.models.Word2Vec(min_count=1,sentences=sentences)
-    model.save("./saved_model")
+    sentences = MyCorpus(files)
+    if os.path.isfile("./saved_model") and not(force_train):
+        model = gensim.models.Word2Vec.load("./saved_model")
+    else:
+        model = gensim.models.Word2Vec(max_final_vocab = 1000,sentences=sentences)
+        model.save("./saved_model")
+    #print(model.wv.most_similar("print",topn = 10))
+    for index, word in enumerate(model.wv.index_to_key):
+        if index ==10:
+            break
+        print(f"word #{index}/{len(model.wv.index_to_key)} is {word}")
+    print("done")
 
-model_cp = copy.deepcopy(model)
+    return model
 
-#print(model.wv.most_similar("print",topn = 10))
-for index, word in enumerate(model.wv.index_to_key):
-    if index ==10:
-        break
-    print(f"word #{index}/{len(model.wv.index_to_key)} is {word}")
-print("done")
+def ak_rule(word, count, min_count): # params are needed
+    return gensim.utils.RULE_KEEP
 
-for elt in os.listdir("./test") :
-    print("processing : ", elt)
-    sentences = MyCorpus(["./test/" + elt]) 
-    #print("before : ",len(model.wv))
-    model.build_vocab(list(sentences), update=True)
+def process(path,model):
+    model = copy.deepcopy(model)
+    sentences = MyCorpus([path]) 
+    print("before : ",len(model.wv))
+    model.build_vocab(list(sentences), update=True, trim_rule = ak_rule )
+    print("after : ",len(model.wv))
     model.train([[sentences]], total_examples=1, epochs=1)
-    #print("after : ",len(model.wv))
-#word2vec ready to process elt at this point
-    model = copy.deepcopy(model_cp)
+    l = []
+    for elt in sentences:
+        l.append(model.wv[elt])
+    return l
+
+
+#for elt in os.listdir("./test") :
+#    print("processing : ", elt)
+#    model = get_model(force_train = True)
+#    process("./test/" + elt, model)
 
 
 ### 2D result representation ###
@@ -99,7 +107,6 @@ def reduce_dimensions(model):
     return x_vals, y_vals, labels
 
 
-x_vals, y_vals, labels = reduce_dimensions(model)
 
 def plot_with_plotly(x_vals, y_vals, labels, plot_in_notebook=True):
     from plotly.offline import init_notebook_mode, iplot, plot
@@ -131,11 +138,12 @@ def plot_with_matplotlib(x_vals, y_vals, labels):
         plt.annotate(labels[i], (x_vals[i], y_vals[i]))
     plt.show()
 
-try:
-    get_ipython()
-except Exception:
-    plot_function = plot_with_matplotlib
-else:
-    plot_function = plot_with_plotly
-
-plot_function(x_vals, y_vals, labels)
+#x_vals, y_vals, labels = reduce_dimensions(model)
+#try:
+#    get_ipython()
+#except Exception:
+#    plot_function = plot_with_matplotlib
+#else:
+#    plot_function = plot_with_plotly
+#
+#plot_function(x_vals, y_vals, labels)
