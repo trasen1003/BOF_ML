@@ -28,6 +28,44 @@ def extract_tokens(filename):
         process_tokens(tokens)
         return names
 
+def save_Tokenized(infile_name):
+    f = open("./test/" + infile_name,'rb')
+    out_path = "./tokens_saved/" + infile_name + ".tok"
+    if os.path.isfile(out_path):
+        os.remove(out_path)
+    outfile = open(out_path,'w')
+    code_str = f.read().decode(encoding = "UTF-8", errors ='replace')
+    f.close()
+    if code_str == None:
+        return []
+    else:
+        names = []        
+
+        def process_tokens(tokens):
+            #reject tokens which types or values are considered not interesting
+            for _type, value in tokens:
+                value = "".join(value.split(" "))
+                if _type not in Token.Comment and _type not in Token.Text:
+                    if value not in ('','\n'):
+                        names.append(value)
+        lexer = lexers.get_lexer_by_name('cpp')
+        tokens = pygments.lex(code_str,lexer)
+        process_tokens(tokens)
+        outfile.write("ø".join(names))
+        return names
+
+def load_Tokenized(file_name):
+    try:
+        f = open("./tokens_saved/" + file_name,'rb')
+    except:
+        print("wrong file name")
+        return None
+    code_str = f.read().decode(encoding = "UTF-8", errors ='replace')
+    return code_str.split("ø")
+
+#usage exemple : 
+#save_Tokenized("window.cpp")
+#print(extract_tokens("./test/window.cpp") == load_Tokenized("window.cpp.tok"))
 
 
 class MyCorpus:

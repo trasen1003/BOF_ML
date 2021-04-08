@@ -1,6 +1,0 @@
-./basic_overflow.cpp
-./samples/Sd2Card.cpp
-./samples/SdBaseFile.cpp
-./samples/MarlinCore.cpp
-./samples/SdVolume.cpp
-./samples/cardreader.cpp
