@@ -8,6 +8,7 @@ print(sys.getsizeof(a))
 
 f = open("/tmp/store_pickle",'wb')
 pickle.dump(a,f)
+
 f.close()
 f = open("/tmp/store_string",'w')
 s = "/".join(str(a))
