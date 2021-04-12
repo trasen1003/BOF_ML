@@ -156,11 +156,12 @@ void %s(char* %s){
 		flows.append(genFlow())
 	str += mixCode(flows)
 	str += mainString
-	return str
+	return str, vuln==1
 
-for i in range(1):
+
+for i in range(10000):
 	if(i%1000 == 0):
 		print(i)
-	f = open("ex1/code"+str(i)+".c", "w")
-	f.write(genCode())
+	f = open("ex2/"+str(i)+".c", "w")
+	f.write(genCode()[0])
 	f.close()

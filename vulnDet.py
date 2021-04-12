@@ -9,9 +9,11 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from random import randint
 import time
+import pickle
+
 train_length = 1000
 test_length = 100
-context_size = 20
+context_size = 50
 batch_size = 64
 print("0")
 
@@ -53,6 +55,8 @@ def ak_rule(word, count, min_count): # params are needed
     return gensim.utils.RULE_KEEP
 
 
+
+
 class MyCorpus:
     """An iterator that yields sentences (lists of str)."""
     def __init__(self, files):
@@ -63,6 +67,25 @@ class MyCorpus:
             tokens = extract_tokens(code)
             if tokens != []:
                 yield tokens
+
+class MyDataset(keras.utils.Sequence):
+    """A generator that yields examples for training"""
+    def __getitem__(self,index):
+        vuln = randint(0,1)
+        y= []
+        if(vuln):
+            file = 'trainData/vuln/MIRl%s'%str(index)
+            y = [[0,1] for i in range(100)]
+        else:
+            file = 'trainData/clean/MIRl%s'%str(index)
+            y = [[1,0] for i in range(100)]
+        x = pickle.load(open(file, 'rb'))
+        x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
+        y = np.array(y)
+        return (x, y)
+
+    def __len__(self):
+        return 1000
 
 import gensim.models
 
@@ -80,21 +103,40 @@ print(vec_length)
 
 dl_model = keras.Sequential(
     [
-        layers.Conv1D(32, context_size, input_shape=(None, vec_length)),
-            layers.GlobalMaxPooling1D(),
-            layers.Dense(32),
-            layers.Dense(2,activation='softmax')
+        layers.Conv1D(32, context_size, input_shape=(1500, vec_length)),
+        layers.GlobalMaxPooling1D(data_format="channels_first"),
+        layers.Dense(32),
+        layers.Dense(2,activation='softmax')
     ])
 
 optimizer = keras.optimizers.Adam()
 loss = keras.losses.BinaryCrossentropy()
+
+
+def save():
+    file_list = []
+    for j in range(100000):
+        file_list.append('trainData/clean/code%s.c'%str(j))
+    sentences = [extract_tokens(code) for code in file_list]
+    model.build_vocab(sentences, update=True , trim_rule = ak_rule)
+    model.train(sentences, total_examples=1, epochs=1)
+    a = len(sentences)
+    for i in range(a//100):
+        if(i%10 == 0):
+            print(i)
+        file = open('trainData/clean/MIRl%s'%str(i), 'wb')
+        pickle.dump([model.wv[sentences[j]] for j in range(i,i+100)], file)
+        file.close()
+
+
+
+
 def train():
-    t0 = time.time()
-    t = t0
     nb_clean = 0
     nb_vuln = 0
     for i in range(train_length):
         print(i)
+        t0 = time.time()
         file_list = []
         y = []
         for j in range(batch_size):
@@ -109,20 +151,65 @@ def train():
                 y.append([1,0])
                 nb_clean += 1
         modelex = copy.deepcopy(model)
-        t0 = time.time()
         sentences = [extract_tokens(code) for code in file_list]
         modelex.build_vocab(sentences, update=True , trim_rule = ak_rule)
-        t1 = time.time()
         modelex.train(sentences, total_examples=1, epochs=1)
         x = [modelex.wv[elt] for elt in sentences]  
-        print(t1 - t0, "\n", time.time() - t1)
         x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
-        print(len(x[0]))
+        print(len(x))
+        print(x[0].shape)
         with tf.GradientTape() as tape:
             logits = dl_model(x)
             loss_value = loss(y, logits)
             print(tf.reduce_mean(x))
         gradients = tape.gradient(loss_value, dl_model.trainable_weights)
         optimizer.apply_gradients(zip(gradients, dl_model.trainable_weights))
+        print(time.time() - t0)
 
-train()
+
+def trainfrompickle():
+    t0 = time.time()
+    nb_clean = 0
+    nb_vuln = 0
+    while(nb_clean < 1000 and nb_vuln < 1000):
+        print("a", "\n", nb_clean, "\n", nb_vuln)
+        t0 = time.time()
+        y = []
+        vuln = randint(0,1)
+        if(vuln):
+            file = 'trainData/vuln/MIRl%s'%str(nb_vuln)
+            y = [[0,1] for i in range(100)]
+            nb_vuln += 1
+
+        else:
+            file = 'trainData/clean/MIRl%s'%str(nb_clean)
+            y = [[1,0] for i in range(100)]
+            nb_clean += 1
+        x = pickle.load(open(file, 'rb'))
+        x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
+        print(len(x))
+        print(x[0].shape)
+        with tf.GradientTape() as tape:
+            logits = dl_model(x)
+            print(logits.shape)
+            loss_value = loss(y, logits)
+            print(tf.reduce_mean(x))
+        gradients = tape.gradient(loss_value, dl_model.trainable_weights)
+        optimizer.apply_gradients(zip(gradients, dl_model.trainable_weights))
+        print(time.time() - t0)
+
+def trainwithfit():
+    dl_model.compile(
+        optimizer=tf.optimizers.Adam(learning_rate=0.01,),
+        loss='binary_crossentropy',
+        metrics=['accuracy'],
+    )
+
+    generator = MyDataset()
+    dl_model.fit(
+        x=generator,
+        verbose=2,
+        epochs=10,
+    )
+
+trainwithfit()
