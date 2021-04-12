@@ -1,0 +1,5 @@
+digraph printf {  
+"1000427" [label = "(METHOD,printf)" ]
+"1000428" [label = "(PARAM,p1)" ]
+  "1000427" -> "1000428"  [ label = "DDG: "] 
+}

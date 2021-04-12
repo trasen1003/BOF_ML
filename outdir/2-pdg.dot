@@ -1,0 +1,7 @@
+digraph <operator>.addition {  
+"1000394" [label = "(METHOD,<operator>.addition)" ]
+"1000395" [label = "(PARAM,p1)" ]
+"1000396" [label = "(PARAM,p2)" ]
+  "1000394" -> "1000395"  [ label = "DDG: "] 
+  "1000394" -> "1000396"  [ label = "DDG: "] 
+}

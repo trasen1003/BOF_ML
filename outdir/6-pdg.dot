@@ -1,0 +1,5 @@
+digraph <operator>.sizeOf {  
+"1000413" [label = "(METHOD,<operator>.sizeOf)" ]
+"1000414" [label = "(PARAM,p1)" ]
+  "1000413" -> "1000414"  [ label = "DDG: "] 
+}

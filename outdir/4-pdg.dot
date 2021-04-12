@@ -1,0 +1,7 @@
+digraph <operator>.subtraction {  
+"1000403" [label = "(METHOD,<operator>.subtraction)" ]
+"1000404" [label = "(PARAM,p1)" ]
+"1000405" [label = "(PARAM,p2)" ]
+  "1000403" -> "1000404"  [ label = "DDG: "] 
+  "1000403" -> "1000405"  [ label = "DDG: "] 
+}

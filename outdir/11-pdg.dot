@@ -1,0 +1,9 @@
+digraph strncpy {  
+"1000436" [label = "(METHOD,strncpy)" ]
+"1000437" [label = "(PARAM,p1)" ]
+"1000438" [label = "(PARAM,p2)" ]
+"1000439" [label = "(PARAM,p3)" ]
+  "1000436" -> "1000437"  [ label = "DDG: "] 
+  "1000436" -> "1000438"  [ label = "DDG: "] 
+  "1000436" -> "1000439"  [ label = "DDG: "] 
+}

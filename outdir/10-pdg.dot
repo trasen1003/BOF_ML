@@ -1,0 +1,7 @@
+digraph <operator>.assignment {  
+"1000431" [label = "(METHOD,<operator>.assignment)" ]
+"1000432" [label = "(PARAM,p1)" ]
+"1000433" [label = "(PARAM,p2)" ]
+  "1000431" -> "1000432"  [ label = "DDG: "] 
+  "1000431" -> "1000433"  [ label = "DDG: "] 
+}

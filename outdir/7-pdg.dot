@@ -1,0 +1,7 @@
+digraph <operator>.division {  
+"1000417" [label = "(METHOD,<operator>.division)" ]
+"1000418" [label = "(PARAM,p1)" ]
+"1000419" [label = "(PARAM,p2)" ]
+  "1000417" -> "1000418"  [ label = "DDG: "] 
+  "1000417" -> "1000419"  [ label = "DDG: "] 
+}
