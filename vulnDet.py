@@ -10,6 +10,8 @@ from tensorflow.keras import layers
 from random import randint
 import time
 import pickle
+import gen
+from tqdm import tqdm
 
 train_length = 1000
 test_length = 100
@@ -46,15 +48,9 @@ files = []
 for elt in os.listdir("./train"):
     files.append("./train/" + elt)
 
-def loss_fn(y, y_pred):
-    return (y-y_pred)**2
-
-
 
 def ak_rule(word, count, min_count): # params are needed
     return gensim.utils.RULE_KEEP
-
-
 
 
 class MyCorpus:
@@ -74,18 +70,25 @@ class MyDataset(keras.utils.Sequence):
         vuln = randint(0,1)
         y= []
         if(vuln):
-            file = 'trainData/vuln/MIRl%s'%str(index)
+            file = '%s/vuln/MIRl%s'%(self.folder,str(index))
             y = [[0,1] for i in range(100)]
         else:
-            file = 'trainData/clean/MIRl%s'%str(index)
+            file = '%s/clean/MIRl%s'%(self.folder,str(index))
             y = [[1,0] for i in range(100)]
         x = pickle.load(open(file, 'rb'))
         x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
         y = np.array(y)
         return (x, y)
 
+    def __init__(self, folder):
+        self.folder = folder
+        if (folder=="trainData"):
+            self.len = 100
+        else:
+            self.len = 10
+
     def __len__(self):
-        return 100
+        return self.len
 
 import gensim.models
 
@@ -115,18 +118,22 @@ loss = keras.losses.BinaryCrossentropy()
 
 
 
-def save(categorie = "clean"):
+def save(categorie, vulnType):
     file_list = []
-    for j in range(10000):
-        file_list.append('trainData/' + categorie +'/%s.c'%str(j))
+    print("Training word2vec...")
+    if(categorie=="trainData"):
+        length = 10000
+    else:
+        length = 1000
+    for j in range(length):
+        file_list.append(categorie + '/' + vulnType +'/code%s.c'%str(j))
     sentences = [extract_tokens(code) for code in file_list]
     model.build_vocab(sentences, update=True , trim_rule = ak_rule)
     model.train(sentences, total_examples=1, epochs=1)
-    a = len(sentences)
-    for i in range(a//100):
-        if(i%10 == 0):
-            print(i)
-        file = open('trainData/' + categorie +'/MIRl%s'%str(i), 'wb')
+    l = len(sentences)
+    print("Saving CNN training data")
+    for i in tqdm(range(l//100)):
+        file = open(categorie + '/' + vulnType +'/MIRl%s'%str(i), 'wb')
         pickle.dump([model.wv[sentences[j]] for j in range(i,i+100)], file)
         file.close()
 #print("saving ...")
@@ -202,17 +209,117 @@ def trainfrompickle():
         print(time.time() - t0)
 
 def trainwithfit():
+
     dl_model.compile(
         optimizer=tf.optimizers.Adam(learning_rate=0.01,),
         loss='binary_crossentropy',
         metrics=['accuracy'],
     )
 
-    generator = MyDataset()
+    generatorTrain = MyDataset("trainData")
     dl_model.fit(
-        x=generator,
+        x=generatorTrain,
         verbose=2,
-        epochs=10,
+        epochs=30,
     )
 
+    generatorTest = MyDataset("testData")
+    dl_model.evaluate(
+        x=generatorTest,
+    )
+
+def checkInstallation():
+    if not os.path.isdir('trainData'):
+        print("Training data not found, generating data...")
+        os.mkdir('trainData')
+        os.mkdir('trainData/clean')
+        os.mkdir('trainData/vuln')
+        print("Generating codes")
+        for i in tqdm(range(10000)):
+            file = open('trainData/clean/code%s.c'%str(i), 'w')
+            file.write(gen.genCode(0))
+            file.close()
+            file = open('trainData/vuln/code%s.c'%str(i), 'w')
+            file.write(gen.genCode(1))
+            file.close()
+        print("Generating CNN training data")
+        print("Generating data for non-vulnerable codes")
+        save("trainData","clean")
+        print("Generating data for vulnerable codes")
+        save("trainData", "vuln")
+        print("Data generation complete !")
+    else:
+        if not os.path.isdir('trainData/clean'):
+            print("Non-vulnerable training data not found, generating data...")
+            os.mkdir('trainData/clean')
+            print("Generating codes")
+            for i in tqdm(range(10000)):
+                file = open('trainData/clean/code%s.c'%str(i), 'w')
+                file.write(gen.genCode(0))
+                file.close()
+            print("Generating CNN training data")
+            save("trainData","clean")
+            print("Data generation complete !")
+        if not os.path.isdir('trainData/vuln'):
+            print("Vulnerable training data not found, generating data...")
+            os.mkdir('trainData/vuln')
+            print("Generating codes")
+            for i in tqdm(range(10000)):
+                file = open('trainData/vuln/code%s.c'%str(i), 'w')
+                file.write(gen.genCode(1))
+                file.close()
+            print("Generating CNN training data")
+            save("trainData","vuln")
+            print("Data generation complete !")
+
+    if not os.path.isdir('testData'):
+        print("Test data not found, generating data...")
+        os.mkdir('testData')
+        os.mkdir('testData/clean')
+        os.mkdir('testData/vuln')
+        print("Generating codes")
+        for i in tqdm(range(1000)):
+            file = open('testData/clean/code%s.c'%str(i), 'w')
+            file.write(gen.genCode(0))
+            file.close()
+            file = open('testData/vuln/code%s.c'%str(i), 'w')
+            file.write(gen.genCode(1))
+            file.close()
+        print("Generating CNN test data")
+        print("Generating data for non-vulnerable codes")
+        save("testData","clean")
+        print("Generating data for vulnerable codes")
+        save("testData","vuln")
+        print("Data generation complete !")
+    else:
+        if not os.path.isdir('testData/clean'):
+            print("Non-vulnerable test data not found, generating data...")
+            os.mkdir('testData/clean')
+            print("Generating codes")
+            for i in tqdm(range(1000)):
+                file = open('testData/clean/code%s.c'%str(i), 'w')
+                file.write(gen.genCode(0))
+                file.close()
+            print("Generating CNN test data")
+            save("testData","clean")
+            print("Data generation complete !")
+        if not os.path.isdir('testData/vuln'):
+            print("Vulnerable test data not found, generating data...")
+            os.mkdir('testData/vuln')
+            print("Generating codes")
+            for i in tqdm(range(1000)):
+                file = open('testData/vuln/code%s.c'%str(i), 'w')
+                file.write(gen.genCode(1))
+                file.close()
+            print("Generating CNN test data")
+            save("testData","vuln")
+            print("Data generation complete !")
+    print("Data folders found")
+    
+        
+    
+
+
+
+checkInstallation()
 trainwithfit()
