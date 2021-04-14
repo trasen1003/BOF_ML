@@ -39,12 +39,12 @@ def extract_tokens(filename):
         process_tokens(tokens)
         return names
 
-print("0")
+
 
 #files to learn word2vec on
 files = []
-for elt in os.listdir("./ex1"):
-    files.append("./ex1/" + elt)
+for elt in os.listdir("./train"):
+    files.append("./train/" + elt)
 
 def loss_fn(y, y_pred):
     return (y-y_pred)**2
@@ -85,7 +85,7 @@ class MyDataset(keras.utils.Sequence):
         return (x, y)
 
     def __len__(self):
-        return 1000
+        return 100
 
 import gensim.models
 
@@ -98,7 +98,7 @@ for index, word in enumerate(model.wv.index_to_key):
     print(f"word #{index}/{len(model.wv.index_to_key)} is {word}")
 print("done")
 
-vec_length = len(model.wv['int'])
+vec_length = len(model.wv['('])
 print(vec_length)
 
 dl_model = keras.Sequential(
@@ -113,10 +113,12 @@ optimizer = keras.optimizers.Adam()
 loss = keras.losses.BinaryCrossentropy()
 
 
-def save():
+
+
+def save(categorie = "clean"):
     file_list = []
-    for j in range(100000):
-        file_list.append('trainData/clean/code%s.c'%str(j))
+    for j in range(10000):
+        file_list.append('trainData/' + categorie +'/%s.c'%str(j))
     sentences = [extract_tokens(code) for code in file_list]
     model.build_vocab(sentences, update=True , trim_rule = ak_rule)
     model.train(sentences, total_examples=1, epochs=1)
@@ -124,11 +126,12 @@ def save():
     for i in range(a//100):
         if(i%10 == 0):
             print(i)
-        file = open('trainData/clean/MIRl%s'%str(i), 'wb')
+        file = open('trainData/' + categorie +'/MIRl%s'%str(i), 'wb')
         pickle.dump([model.wv[sentences[j]] for j in range(i,i+100)], file)
         file.close()
-
-
+#print("saving ...")
+#save("clean")
+#save("vuln")
 
 
 def train():

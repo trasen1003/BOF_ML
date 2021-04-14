@@ -36,7 +36,7 @@ def slice(path_to_pdg):
         l_adja[elt.get_name()] = []
     for elt in graph.get_edge_list():
         l_adja[elt.get_destination()].append(elt.get_source())
-    d_graph = djikstra_graph("\"1000128\"",l_adja)
+    d_graph = djikstra_graph("\"1000154\"",l_adja)
     sorted_list = sorted(d_graph.items(), key=lambda x:x[1])
     sorted_list.reverse()
     for item in sorted_list:
@@ -44,7 +44,7 @@ def slice(path_to_pdg):
 
 
 
-slice("./outdir/1-pdg.dot")
+slice("./../outdir/0-pdg.dot")
 
 
 

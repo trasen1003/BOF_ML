@@ -85,83 +85,86 @@ def mixCode(codel):
 			codel.pop(i)
 	return str
 
-def genCode():
-	vuln = randint(0,1)
-	scenario = randint(1,4)
-	nb_branches = randint(3,8)
-	inputName = genName()
-	funcName = genName()
+def genCode(vuln = 0):
+    #vuln = randint(0,1)
+    scenario = randint(1,4)
+    nb_branches = randint(3,8)
+    inputName = genName()
+    funcName = genName()
 
-	mainString = """}
+    mainString = """}
 
 int main(int argc, char** argv){
-	%s(argv[1]);
-	printf("done");
-	return 0;
+    %s(argv[1]);
+    printf("done");
+    return 0;
 }
 """ % funcName
 
-	funcString = """#include <stdlib.h>
+    funcString = """#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 void %s(char* %s){
 """ % (funcName, inputName)
-	keyString = ""
+    keyString = ""
 
-	if(vuln == 0):
-		if(scenario == 1):
-			destName = genName()
-			keyString = ["	char %s [%s];"%(destName,randint(16,256)),"	strncpy(%s, %s, sizeof(%s));" % (destName, inputName, destName)]
-		if(scenario == 2):
-			destName = genName()
-			destLen = randint(16,256)
-			keyString = ["	char %s [%s];"%(destName,destLen),"""	for(int i=0; i < sizeof(%s); i++){
-		%s[i %s %s] = %s[i];
-	}""" % (inputName, destName, "%", destLen, inputName)]
-		if(scenario == 3):
-			destName = genName()
-			keyString=["	char %s[%s];"%(destName, randint(33000,65000)),"	unsigned short i;","""	for(i=0; i < sizeof(%s); i++){
-		%s[i] = %s[i];
-	}""" % (inputName, destName, inputName)]
-		if(scenario == 4):
-			destName = genName()
-			destLength = randint(16,256)
-			keyString = ["	char %s[%s];"%(destName, destLength), "	strncpy(%s,%s,%s);"%(destName, inputName, destLength-1),"	%s[%s] = '\0';"%(destName, destLength-1),"	printf('%s', %s);" % ("%s", destName)]
-	else:
-		if(scenario == 1):
-			destName = genName()
-			keyString = ["	char %s [%s];" % (destName, randint(16,256)), "	strcpy(%s, %s);" % (destName, inputName)]
-		if(scenario == 2):
-			destName = genName()
-			destLen = randint(16,256)
-			keyString = ["	char %s [%s];"%(destName, destLen), """	for(int i=0; i < sizeof(%s); i++){
-		%s[i] = %s[i];
-	}""" % (inputName, destName, inputName)]
-		if(scenario == 3):
-			destName = genName()
-			keyString=["	char %s[%s];"%(destName, randint(33000, 65000)), "	signed short i;", """	for(i=0; i < sizeof(%s); i++){
-		%s[i] = %s[i];
-	}""" % (inputName, destName, inputName)]
-		if(scenario == 4):
-			destName = genName()
-			destLength = randint(16,256)
-			keyString = ["	char %s[%s];"%(destName, destLength), "	strncpy(%s,%s,%s);"%(destName, inputName, destLength), "	printf('%s', %s);" % ("%s", destName)]
+    if(vuln == 0):
+        if(scenario == 1):
+            destName = genName()
+            keyString = ["	char %s [%s];"%(destName,randint(16,256)),"	strncpy(%s, %s, sizeof(%s));" % (destName, inputName, destName)]
+        if(scenario == 2):
+            destName = genName()
+            destLen = randint(16,256)
+            keyString = ["	char %s [%s];"%(destName,destLen),"""	for(int i=0; i < sizeof(%s); i++){
+        %s[i %s %s] = %s[i];
+    }""" % (inputName, destName, "%", destLen, inputName)]
+        if(scenario == 3):
+            destName = genName()
+            keyString=["	char %s[%s];"%(destName, randint(33000,65000)),"	unsigned short i;","""	for(i=0; i < sizeof(%s); i++){
+                    %s[i] = %s[i];
+    }""" % (inputName, destName, inputName)]
+        if(scenario == 4):
+            destName = genName()
+            destLength = randint(16,256)
+            keyString = ["	char %s[%s];"%(destName, destLength), "	strncpy(%s,%s,%s);"%(destName, inputName, destLength-1),"	%s[%s] = '\0';"%(destName, destLength-1),"	printf('%s', %s);" % ("%s", destName)]
+    else:
+        if(scenario == 1):
+            destName = genName()
+            keyString = ["	char %s [%s];" % (destName, randint(16,256)), "	strcpy(%s, %s);" % (destName, inputName)]
+        if(scenario == 2):
+            destName = genName()
+            destLen = randint(16,256)
+            keyString = ["	char %s [%s];"%(destName, destLen), """	for(int i=0; i < sizeof(%s); i++){
+        %s[i] = %s[i];
+    }""" % (inputName, destName, inputName)]
+        if(scenario == 3):
+            destName = genName()
+            keyString=["	char %s[%s];"%(destName, randint(33000, 65000)), "	signed short i;", """	for(i=0; i < sizeof(%s); i++){
+                    %s[i] = %s[i];
+    }""" % (inputName, destName, inputName)]
+        if(scenario == 4):
+            destName = genName()
+            destLength = randint(16,256)
+            keyString = ["	char %s[%s];"%(destName, destLength), "	strncpy(%s,%s,%s);"%(destName, inputName, destLength), "	printf('%s', %s);" % ("%s", destName)]
 
 
-	str = funcString
-	flows = [keyString]
-	nb_flows = randint(3,10)
-	for i in range(nb_flows):
-		flows.append(genFlow())
-	str += mixCode(flows)
-	str += mainString
-	return str, vuln==1
+    str = funcString
+    flows = [keyString]
+    nb_flows = randint(3,10)
+    for i in range(nb_flows):
+        flows.append(genFlow())
+    str += mixCode(flows)
+    str += mainString
+    return str, vuln==1
 
 
 for i in range(10000):
-	if(i%1000 == 0):
-		print(i)
-	f = open("ex2/"+str(i)+".c", "w")
-	f.write(genCode()[0])
-	f.close()
+    if(i%1000 == 0):
+        print(i)
+    f = open("data/clean/"+str(i)+".c", "w")
+    f.write(genCode(0)[0])
+    f.close()
+    f = open("data/vuln/"+str(i)+".c", "w")
+    f.write(genCode(1)[0])
+    f.close()
