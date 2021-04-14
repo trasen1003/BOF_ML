@@ -86,9 +86,7 @@ def mixCode(codel):
 	return str
 
 def genCode(vuln = 0):
-    #vuln = randint(0,1)
     scenario = randint(1,4)
-    nb_branches = randint(3,8)
     inputName = genName()
     funcName = genName()
 
@@ -156,15 +154,5 @@ void %s(char* %s){
         flows.append(genFlow())
     str += mixCode(flows)
     str += mainString
-    return str, vuln==1
+    return str
 
-
-for i in range(10000):
-    if(i%1000 == 0):
-        print(i)
-    f = open("data/clean/"+str(i)+".c", "w")
-    f.write(genCode(0)[0])
-    f.close()
-    f = open("data/vuln/"+str(i)+".c", "w")
-    f.write(genCode(1)[0])
-    f.close()

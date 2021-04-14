@@ -208,6 +208,19 @@ def trainfrompickle():
         optimizer.apply_gradients(zip(gradients, dl_model.trainable_weights))
         print(time.time() - t0)
 
+from tensorflow.keras.callbacks import TensorBoard 
+import datetime
+log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
+
+tensorboard_callback = TensorBoard(
+    log_dir=log_dir,
+    histogram_freq=1,
+    write_graph=True,
+    write_images=False,
+    update_freq="epoch",
+)
+
 def trainwithfit():
 
     dl_model.compile(
@@ -220,7 +233,8 @@ def trainwithfit():
     dl_model.fit(
         x=generatorTrain,
         verbose=2,
-        epochs=30,
+        epochs=3,
+        callbacks=[tensorboard_callback]
     )
 
     generatorTest = MyDataset("testData")
