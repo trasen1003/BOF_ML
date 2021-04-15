@@ -1,2 +1,5 @@
 *.out
 trainData/*
+testData/*
+logs/*
+*/workspace/*

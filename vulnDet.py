@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+import math
 import pygments
 from pygments.token import Token
 from pygments import lexers, highlight
@@ -16,7 +17,7 @@ from tqdm import tqdm
 train_length = 1000
 test_length = 100
 context_size = 50
-batch_size = 64
+batch_size = 54
 print("0")
 
 lexer = lexers.get_lexer_by_name('cpp')
@@ -67,23 +68,32 @@ class MyCorpus:
 class MyDataset(keras.utils.Sequence):
     """A generator that yields examples for training"""
     def __getitem__(self,index):
-        vuln = randint(0,1)
+        vuln_data = []
+        clean_data = []
+        x = []
         y= []
-        if(vuln):
-            file = '%s/vuln/MIRl%s'%(self.folder,str(index))
-            y = [[0,1] for i in range(100)]
-        else:
-            file = '%s/clean/MIRl%s'%(self.folder,str(index))
-            y = [[1,0] for i in range(100)]
-        x = pickle.load(open(file, 'rb'))
+        nb_load = math.ceil(batch_size/100)
+        for i in range(nb_load):
+            vuln_data.append(pickle.load(open('%s/vuln/MIRl%s'%(self.folder,str(math.floor(index*batch_size/100) + i)),'rb')))
+            clean_data.append(pickle.load(open('%s/clean/MIRl%s'%(self.folder,str(math.floor(index*batch_size/100) + i)),'rb')))
+        for i in range(batch_size):
+            vuln = randint(0,1)
+            #print("index : ",index,"i : ",i,"batch size : ",batch_size)
+            if(vuln):
+                x.append(vuln_data[math.floor(i/100)][i])
+                y.append([0,1])
+            else:
+                x.append(vuln_data[math.floor(i/100)][i])
+                y.append([1,0])
         x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
         y = np.array(y)
         return (x, y)
 
-    def __init__(self, folder):
+    def __init__(self, folder,batch_size = 100):
+        self.batch_size = batch_size
         self.folder = folder
         if (folder=="trainData"):
-            self.len = 100
+            self.len = math.floor(10000/batch_size)
         else:
             self.len = 10
 
