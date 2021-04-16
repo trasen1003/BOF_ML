@@ -15,7 +15,8 @@ import gen
 from tqdm import tqdm
 
 train_length = 1000
-test_length = 100
+test_length = 10
+file_length = 100
 context_size = 50
 batch_size = 54
 print("0")
@@ -72,30 +73,30 @@ class MyDataset(keras.utils.Sequence):
         clean_data = []
         x = []
         y= []
-        nb_load = math.ceil(batch_size/100)
-        for i in range(nb_load):
+        nb_load = math.ceil(batch_size/file_length)
+        for i in range(nb_load):    
             vuln_data.append(pickle.load(open('%s/vuln/MIRl%s'%(self.folder,str(math.floor(index*batch_size/100) + i)),'rb')))
             clean_data.append(pickle.load(open('%s/clean/MIRl%s'%(self.folder,str(math.floor(index*batch_size/100) + i)),'rb')))
-        for i in range(batch_size):
+        for i in range(index*batch_size%file_length, index*batch_size%file_length + batch_size):
             vuln = randint(0,1)
             #print("index : ",index,"i : ",i,"batch size : ",batch_size)
             if(vuln):
-                x.append(vuln_data[math.floor(i/100)][i])
+                x.append(vuln_data[math.floor(i/file_length)][i])
                 y.append([0,1])
             else:
-                x.append(vuln_data[math.floor(i/100)][i])
+                x.append(vuln_data[math.floor(i/file_length)][i])
                 y.append([1,0])
         x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
         y = np.array(y)
         return (x, y)
 
-    def __init__(self, folder,batch_size = 100):
+    def __init__(self, folder,batch_size = file_length):
         self.batch_size = batch_size
         self.folder = folder
         if (folder=="trainData"):
-            self.len = math.floor(10000/batch_size)
+            self.len = math.floor(file_length*train_length/batch_size)
         else:
-            self.len = 10
+            self.len = math.floor(file_length*train_length/batch_size)
 
     def __len__(self):
         return self.len
@@ -132,9 +133,9 @@ def save(categorie, vulnType):
     file_list = []
     print("Training word2vec...")
     if(categorie=="trainData"):
-        length = 10000
+        length = file_length*train_length
     else:
-        length = 1000
+        length = file_length*test_length
     for j in range(length):
         file_list.append(categorie + '/' + vulnType +'/code%s.c'%str(j))
     sentences = [extract_tokens(code) for code in file_list]
@@ -142,9 +143,9 @@ def save(categorie, vulnType):
     model.train(sentences, total_examples=1, epochs=1)
     l = len(sentences)
     print("Saving CNN training data")
-    for i in tqdm(range(l//100)):
+    for i in tqdm(range(l//file_length)):
         file = open(categorie + '/' + vulnType +'/MIRl%s'%str(i), 'wb')
-        pickle.dump([model.wv[sentences[j]] for j in range(i,i+100)], file)
+        pickle.dump([model.wv[sentences[j]] for j in range(i,i+file_length)], file)
         file.close()
 #print("saving ...")
 #save("clean")
@@ -259,7 +260,7 @@ def checkInstallation():
         os.mkdir('trainData/clean')
         os.mkdir('trainData/vuln')
         print("Generating codes")
-        for i in tqdm(range(10000)):
+        for i in tqdm(range(file_length*train_length)):
             file = open('trainData/clean/code%s.c'%str(i), 'w')
             file.write(gen.genCode(0))
             file.close()
@@ -277,7 +278,7 @@ def checkInstallation():
             print("Non-vulnerable training data not found, generating data...")
             os.mkdir('trainData/clean')
             print("Generating codes")
-            for i in tqdm(range(10000)):
+            for i in tqdm(range(file_length*train_length)):
                 file = open('trainData/clean/code%s.c'%str(i), 'w')
                 file.write(gen.genCode(0))
                 file.close()
@@ -288,7 +289,7 @@ def checkInstallation():
             print("Vulnerable training data not found, generating data...")
             os.mkdir('trainData/vuln')
             print("Generating codes")
-            for i in tqdm(range(10000)):
+            for i in tqdm(range(file_length*train_length)):
                 file = open('trainData/vuln/code%s.c'%str(i), 'w')
                 file.write(gen.genCode(1))
                 file.close()
@@ -302,7 +303,7 @@ def checkInstallation():
         os.mkdir('testData/clean')
         os.mkdir('testData/vuln')
         print("Generating codes")
-        for i in tqdm(range(1000)):
+        for i in tqdm(range(file_length*test_length)):
             file = open('testData/clean/code%s.c'%str(i), 'w')
             file.write(gen.genCode(0))
             file.close()
@@ -320,7 +321,7 @@ def checkInstallation():
             print("Non-vulnerable test data not found, generating data...")
             os.mkdir('testData/clean')
             print("Generating codes")
-            for i in tqdm(range(1000)):
+            for i in tqdm(range(file_length*test_length)):
                 file = open('testData/clean/code%s.c'%str(i), 'w')
                 file.write(gen.genCode(0))
                 file.close()
@@ -331,7 +332,7 @@ def checkInstallation():
             print("Vulnerable test data not found, generating data...")
             os.mkdir('testData/vuln')
             print("Generating codes")
-            for i in tqdm(range(1000)):
+            for i in tqdm(range(file_length*test_length)):
                 file = open('testData/vuln/code%s.c'%str(i), 'w')
                 file.write(gen.genCode(1))
                 file.close()
