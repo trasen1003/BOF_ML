@@ -18,7 +18,7 @@ train_length = 100
 test_length = 10
 file_length = 100
 context_size = 50
-batch_size = 5
+batch_size = 50
 print("0")
 
 lexer = lexers.get_lexer_by_name('cpp')
@@ -90,8 +90,7 @@ class MyDataset(keras.utils.Sequence):
         y = np.array(y)
         return (x, y)
 
-    def __init__(self, folder,batch_size = file_length):
-        self.batch_size = batch_size
+    def __init__(self, folder):
         self.folder = folder
         if (folder=="trainData"):
             self.len = math.floor(file_length*train_length/batch_size)
@@ -123,7 +122,7 @@ dl_model = keras.Sequential(
         layers.Dense(2,activation='softmax')
     ])
 
-optimizer = keras.optimizers.Adam()
+optimizer = keras.optimizers.Adam(learning_rate=0.01)
 loss = keras.losses.BinaryCrossentropy()
 
 
@@ -235,7 +234,7 @@ tensorboard_callback = TensorBoard(
 def trainwithfit():
 
     dl_model.compile(
-        optimizer=tf.optimizers.Adam(learning_rate=0.01,),
+        optimizer=optimizer,
         loss='binary_crossentropy',
         metrics=['accuracy'],
     )
