@@ -14,11 +14,11 @@ import pickle
 import gen
 from tqdm import tqdm
 
-train_length = 1000
+train_length = 100
 test_length = 10
 file_length = 100
 context_size = 50
-batch_size = 54
+batch_size = 5
 print("0")
 
 lexer = lexers.get_lexer_by_name('cpp')
@@ -73,18 +73,18 @@ class MyDataset(keras.utils.Sequence):
         clean_data = []
         x = []
         y= []
-        nb_load = math.ceil(batch_size/file_length)
-        for i in range(nb_load):    
-            vuln_data.append(pickle.load(open('%s/vuln/MIRl%s'%(self.folder,str(math.floor(index*batch_size/100) + i)),'rb')))
-            clean_data.append(pickle.load(open('%s/clean/MIRl%s'%(self.folder,str(math.floor(index*batch_size/100) + i)),'rb')))
-        for i in range(index*batch_size%file_length, index*batch_size%file_length + batch_size):
+        nb_load = math.ceil(((index*batch_size)%file_length + batch_size)/file_length)
+        for i in range(nb_load):
+            vuln_data.append(pickle.load(open('%s/vuln/MIRl%s'%(self.folder,str(math.floor(index*batch_size/file_length) + i)),'rb')))
+            clean_data.append(pickle.load(open('%s/clean/MIRl%s'%(self.folder,str(math.floor(index*batch_size/file_length) + i)),'rb')))
+        for i in range((index*batch_size)%file_length, (index*batch_size)%file_length + batch_size):
             vuln = randint(0,1)
-            #print("index : ",index,"i : ",i,"batch size : ",batch_size)
+            #print("index : ",index,"i : ",i,"batch size : ",batch_size, "vuln len : ",len(vuln_data))
             if(vuln):
-                x.append(vuln_data[math.floor(i/file_length)][i])
+                x.append(vuln_data[math.floor(i/file_length)][i%file_length])
                 y.append([0,1])
             else:
-                x.append(vuln_data[math.floor(i/file_length)][i])
+                x.append(clean_data[math.floor(i/file_length)][i%file_length])
                 y.append([1,0])
         x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
         y = np.array(y)
@@ -96,7 +96,7 @@ class MyDataset(keras.utils.Sequence):
         if (folder=="trainData"):
             self.len = math.floor(file_length*train_length/batch_size)
         else:
-            self.len = math.floor(file_length*train_length/batch_size)
+            self.len = math.floor(file_length*test_length/batch_size)
 
     def __len__(self):
         return self.len
