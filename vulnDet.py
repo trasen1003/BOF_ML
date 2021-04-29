@@ -17,8 +17,8 @@ from tqdm import tqdm
 train_length = 100
 test_length = 10
 file_length = 100
-context_size = 50
-batch_size = 50
+context_size = 10
+batch_size = 10
 print("0")
 
 lexer = lexers.get_lexer_by_name('cpp')
@@ -79,6 +79,8 @@ class MyDataset(keras.utils.Sequence):
             clean_data.append(pickle.load(open('%s/clean/MIRl%s'%(self.folder,str(math.floor(index*batch_size/file_length) + i)),'rb')))
         for i in range((index*batch_size)%file_length, (index*batch_size)%file_length + batch_size):
             vuln = randint(0,1)
+            #if(self.folder=="testData"):
+                #vuln = 1
             #print("index : ",index,"i : ",i,"batch size : ",batch_size, "vuln len : ",len(vuln_data))
             if(vuln):
                 x.append(vuln_data[math.floor(i/file_length)][i%file_length])
@@ -126,11 +128,21 @@ optimizer = keras.optimizers.Adam(learning_rate=0.01)
 loss = keras.losses.BinaryCrossentropy()
 
 
+def runFile(path):
+    modelex = copy.deepcopy(model)
+    sentences = extract_tokens(path)
+    modelex.build_vocab([sentences], update=True , trim_rule = ak_rule)
+    modelex.train([sentences], total_examples=1, epochs=1)
+    x = modelex.wv[sentences]  
+    x = keras.preprocessing.sequence.pad_sequences([x], padding='post', dtype=float, maxlen=1500)
+    y_pred = dl_model(x)
+    print(y_pred)
+
 
 
 def save(categorie, vulnType):
     file_list = []
-    print("Training word2vec...")
+    print("Training word2vec...")   
     if(categorie=="trainData"):
         length = file_length*train_length
     else:
@@ -236,18 +248,18 @@ def trainwithfit():
     dl_model.compile(
         optimizer=optimizer,
         loss='binary_crossentropy',
-        metrics=['accuracy'],
+        metrics=['binary_accuracy'],
     )
 
     generatorTrain = MyDataset("trainData")
     dl_model.fit(
         x=generatorTrain,
         verbose=2,
-        epochs=3,
+        epochs=1,
         callbacks=[tensorboard_callback]
     )
 
-    generatorTest = MyDataset("testData")
+    generatorTest = MyDataset("trainData")
     dl_model.evaluate(
         x=generatorTest,
     )
