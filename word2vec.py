@@ -79,7 +79,7 @@ class MyCorpus:
             if tokens != []:
                 yield tokens
 
-def get_model(dir_train = "train", force_train = False):
+def get_model(dir_train = "train", force_train = True):
     #files to learn word2vec on
     files = []
     for elt in os.listdir("./" + dir_train):
@@ -118,7 +118,7 @@ def process(path,model):
 
 #for elt in os.listdir("./test") :
 #    print("processing : ", elt)
-#    model = get_model(force_train = True)
+model = get_model(force_train = True)
 #    process("./test/" + elt, model)
 
 
@@ -176,12 +176,12 @@ def plot_with_matplotlib(x_vals, y_vals, labels):
         plt.annotate(labels[i], (x_vals[i], y_vals[i]))
     plt.show()
 
-#x_vals, y_vals, labels = reduce_dimensions(model)
-#try:
-#    get_ipython()
-#except Exception:
-#    plot_function = plot_with_matplotlib
-#else:
-#    plot_function = plot_with_plotly
-#
-#plot_function(x_vals, y_vals, labels)
+x_vals, y_vals, labels = reduce_dimensions(model)
+try:
+    get_ipython()
+except Exception:
+    plot_function = plot_with_matplotlib
+else:
+    plot_function = plot_with_plotly
+
+plot_function(x_vals, y_vals, labels)
