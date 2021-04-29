@@ -18,16 +18,10 @@ from tensorflow.keras import regularizers
 
 train_length = 20
 test_length = 10
-<<<<<<< HEAD
-file_length = 100
-context_size = 10
-batch_size = 10
-=======
 file_length = 50
 context_size = 50
 batch_size = 10
 vec_length = 100
->>>>>>> e31ae5d49c18bbd9c3119bd149f655d7f8c92890
 print("0")
 
 lexer = lexers.get_lexer_by_name('cpp')
@@ -279,15 +273,11 @@ def trainwithfit():
     dl_model.fit(
         x=generatorTrain,
         verbose=2,
-<<<<<<< HEAD
-        epochs=1,
-=======
         epochs=2,
->>>>>>> e31ae5d49c18bbd9c3119bd149f655d7f8c92890
         callbacks=[tensorboard_callback]
     )
 
-    generatorTest = MyDataset("trainData")
+    generatorTest = MyDataset("testData")
     dl_model.evaluate(
         x=generatorTest,
     )
