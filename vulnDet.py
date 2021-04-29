@@ -13,12 +13,15 @@ import time
 import pickle
 import gen
 from tqdm import tqdm
+import gensim.models
+from tensorflow.keras import regularizers
 
-train_length = 100
+train_length = 20
 test_length = 10
-file_length = 100
+file_length = 50
 context_size = 50
-batch_size = 50
+batch_size = 10
+vec_length = 100
 print("0")
 
 lexer = lexers.get_lexer_by_name('cpp')
@@ -69,6 +72,7 @@ class MyCorpus:
 class MyDataset(keras.utils.Sequence):
     """A generator that yields examples for training"""
     def __getitem__(self,index):
+        #print(index)
         vuln_data = []
         clean_data = []
         x = []
@@ -88,6 +92,8 @@ class MyDataset(keras.utils.Sequence):
                 y.append([1,0])
         x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
         y = np.array(y)
+        #if self.folder == "testData":
+            #print(y)
         return (x, y)
 
     def __init__(self, folder):
@@ -100,29 +106,20 @@ class MyDataset(keras.utils.Sequence):
     def __len__(self):
         return self.len
 
-import gensim.models
 
-sentences = MyCorpus(files)
-model = gensim.models.Word2Vec(sentences=sentences, max_final_vocab = 10)
+#sentences = MyCorpus(files)
+#model = gensim.models.Word2Vec(sentences=sentences, max_final_vocab = 30)
 
-for index, word in enumerate(model.wv.index_to_key):
-    if index == 10:
-        break
-    print(f"word #{index}/{len(model.wv.index_to_key)} is {word}")
-print("done")
-
-vec_length = len(model.wv['('])
-print(vec_length)
 
 dl_model = keras.Sequential(
     [
-        layers.Conv1D(32, context_size, input_shape=(1500, vec_length)),
+        layers.Conv1D(32, context_size, input_shape=(1500, vec_length),kernel_regularizer=regularizers.l1_l2(l1=0.01, l2=0.01)),
         layers.GlobalMaxPooling1D(data_format="channels_first"),
-        layers.Dense(32),
-        layers.Dense(2,activation='softmax')
+        layers.Dense(32,kernel_regularizer=regularizers.l1_l2(l1=0.01, l2=0.01)),
+        layers.Dense(2,activation='softmax',kernel_regularizer = regularizers.l1_l2(l1=0.01, l2=0.01))
     ])
 
-optimizer = keras.optimizers.Adam(learning_rate=0.01)
+optimizer = tf.optimizers.Adam(learning_rate=0.01)
 loss = keras.losses.BinaryCrossentropy()
 
 
@@ -138,13 +135,34 @@ def save(categorie, vulnType):
     for j in range(length):
         file_list.append(categorie + '/' + vulnType +'/code%s.c'%str(j))
     sentences = [extract_tokens(code) for code in file_list]
-    model.build_vocab(sentences, update=True , trim_rule = ak_rule)
-    model.train(sentences, total_examples=1, epochs=1)
+    model = gensim.models.Word2Vec(sentences=sentences, max_final_vocab = 100, vector_size = vec_length)
+    x_vals, y_vals, labels = reduce_dimensions(model)
+    name = categorie + "_" + vulnType + ".png"
+    plot_with_matplotlib(x_vals, y_vals, labels,name)
+
+    for index, word in enumerate(model.wv.index_to_key):
+        if index == 100:
+            break
+        print(f"word #{index}/{len(model.wv.index_to_key)} is {word}")
+    print("done")
+
+    #vec_length = len(model.wv['('])
+    #print(vec_length)
+    #model.build_vocab(sentences, update=True , trim_rule = ak_rule)
+    #model.train(sentences, total_examples=1, epochs=1)
     l = len(sentences)
     print("Saving CNN training data")
     for i in tqdm(range(l//file_length)):
         file = open(categorie + '/' + vulnType +'/MIRl%s'%str(i), 'wb')
-        pickle.dump([model.wv[sentences[j]] for j in range(i,i+file_length)], file)
+        liste = []
+        for j in range(i,i+file_length):
+            liste.append([])
+            for k in range(len(sentences[j])):
+                try:
+                    liste[j-i].append(model.wv[sentences[j][k]])
+                except Exception as e:
+                    liste[j-i].append([0]*vec_length)
+        pickle.dump(liste, file)
         file.close()
 #print("saving ...")
 #save("clean")
@@ -243,7 +261,7 @@ def trainwithfit():
     dl_model.fit(
         x=generatorTrain,
         verbose=2,
-        epochs=3,
+        epochs=2,
         callbacks=[tensorboard_callback]
     )
 
@@ -342,6 +360,46 @@ def checkInstallation():
     
         
     
+### 2D result representation ###
+
+from sklearn.decomposition import IncrementalPCA    # inital reduction
+from sklearn.manifold import TSNE                   # final reduction
+import numpy as np                                  # array handling
+
+
+def reduce_dimensions(model):
+    num_dimensions = 2  # final num dimensions (2D, 3D, etc)
+
+    # extract the words & their vectors, as numpy arrays
+    vectors = np.asarray(model.wv.vectors)
+    labels = np.asarray(model.wv.index_to_key)  # fixed-width numpy strings
+
+    # reduce using t-SNE
+    tsne = TSNE(n_components=num_dimensions, random_state=0)
+    vectors = tsne.fit_transform(vectors)
+
+    x_vals = [v[0] for v in vectors]
+    y_vals = [v[1] for v in vectors]
+    return x_vals, y_vals, labels
+
+
+def plot_with_matplotlib(x_vals, y_vals, labels,name):
+    import matplotlib.pyplot as plt
+    import random
+
+    random.seed(0)
+
+    plt.figure(figsize=(12, 12))
+    plt.scatter(x_vals, y_vals)
+
+    indices = list(range(len(labels)))
+    #selected_indices = random.sample(indices, 100)
+    selected_indices = indices
+    for i in selected_indices:
+        plt.annotate(labels[i], (x_vals[i], y_vals[i]))
+    print(" ___ saving plot ___")
+    plt.savefig(name)
+
 
 
 
