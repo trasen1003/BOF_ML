@@ -1,7 +1,0 @@
-digraph <operator>.multiplication {  
-"9131138316486238851" [label = "(METHOD,<operator>.multiplication)" ]
-"9131138316486238852" [label = "(PARAM,p1)" ]
-"9131138316486238853" [label = "(PARAM,p2)" ]
-  "9131138316486238851" -> "9131138316486238852"  [ label = "DDG: "] 
-  "9131138316486238851" -> "9131138316486238853"  [ label = "DDG: "] 
-}

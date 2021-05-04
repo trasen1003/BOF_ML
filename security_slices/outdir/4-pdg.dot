@@ -1,0 +1,9 @@
+digraph memcpy {  
+"1000186" [label = "(METHOD,memcpy)" ]
+"1000187" [label = "(PARAM,p1)" ]
+"1000188" [label = "(PARAM,p2)" ]
+"1000189" [label = "(PARAM,p3)" ]
+  "1000186" -> "1000187"  [ label = "DDG: "] 
+  "1000186" -> "1000188"  [ label = "DDG: "] 
+  "1000186" -> "1000189"  [ label = "DDG: "] 
+}

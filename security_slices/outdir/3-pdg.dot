@@ -1,0 +1,7 @@
+digraph <operator>.lessThan {  
+"1000181" [label = "(METHOD,<operator>.lessThan)" ]
+"1000182" [label = "(PARAM,p1)" ]
+"1000183" [label = "(PARAM,p2)" ]
+  "1000181" -> "1000182"  [ label = "DDG: "] 
+  "1000181" -> "1000183"  [ label = "DDG: "] 
+}

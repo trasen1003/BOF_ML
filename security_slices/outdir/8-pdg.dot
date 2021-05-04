@@ -1,0 +1,7 @@
+digraph <operator>.shiftLeft {  
+"1000206" [label = "(METHOD,<operator>.shiftLeft)" ]
+"1000207" [label = "(PARAM,p1)" ]
+"1000208" [label = "(PARAM,p2)" ]
+  "1000206" -> "1000207"  [ label = "DDG: "] 
+  "1000206" -> "1000208"  [ label = "DDG: "] 
+}
