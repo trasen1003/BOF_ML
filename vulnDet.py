@@ -15,12 +15,13 @@ import gen
 from tqdm import tqdm
 import gensim.models
 from tensorflow.keras import regularizers
+from sklearn import metrics
 
-train_length = 20
+train_length = 10
 test_length = 10
 file_length = 50
 context_size = 50
-batch_size = 10
+batch_size = 20
 vec_length = 100
 print("0")
 
@@ -119,7 +120,7 @@ dl_model = keras.Sequential(
         layers.Dense(2,activation='softmax',kernel_regularizer = regularizers.l1_l2(l1=0.01, l2=0.01))
     ])
 
-optimizer = tf.optimizers.Adam(learning_rate=0.01)
+optimizer = tf.optimizers.Adam(learning_rate=0.001)
 loss = keras.losses.BinaryCrossentropy()
 
 
@@ -357,6 +358,15 @@ def checkInstallation():
             save("testData","vuln")
             print("Data generation complete !")
     print("Data folders found")
+
+
+def runMIR(path):
+    MIR = pickle.load(open(path,'rb'))
+    print(MIR)
+    MIR = keras.preprocessing.sequence.pad_sequences(MIR, padding='post', dtype=float, maxlen=1500)
+    return dl_model(MIR)
+
+
     
         
     
@@ -365,6 +375,7 @@ def checkInstallation():
 from sklearn.decomposition import IncrementalPCA    # inital reduction
 from sklearn.manifold import TSNE                   # final reduction
 import numpy as np                                  # array handling
+import matplotlib.pyplot as plt
 
 
 def reduce_dimensions(model):
@@ -405,3 +416,25 @@ def plot_with_matplotlib(x_vals, y_vals, labels,name):
 
 checkInstallation()
 trainwithfit()
+
+
+vulns = tf.concat([runMIR("./testData/vuln/MIRl" + str(i)) for i in range(0,10)],0)
+cleans = tf.concat([runMIR("./testData/clean/MIRl" + str(i)) for i in range(0,10)],0)
+
+y = [0]*len(vulns) + [1]*len(cleans)
+scores  = tf.concat([vulns[:,0],cleans[:,0]],0)
+fpr, tpr, thresholds = metrics.roc_curve(y, scores)
+#print(fpr,tpr,thresholds)
+y_pred = []
+for elt in scores:
+    if elt > 0.5:
+        y_pred.append(1)
+    else:
+        y_pred.append(0)
+print(metrics.recall_score(y,y_pred))
+print(metrics.precision_score(y,y_pred))
+print(metrics.f1_score(y,y_pred))
+plt.plot(fpr,tpr)
+plt.xlabel("false positive rate")
+plt.ylabel("true positive rate")
+plt.show()
