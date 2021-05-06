@@ -4,3 +4,4 @@ testData/*
 logs/*
 */workspace/*
 __pycache__/*
+.gitignore
