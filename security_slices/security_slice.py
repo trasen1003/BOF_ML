@@ -38,25 +38,21 @@ def tri_topo(target,l_adja):
 
 
 
-def slice(path_to_pdg):
+def slice(path_to_pdg,node_number):
     graph = pydot.graph_from_dot_file(path_to_pdg)[0]
     l_adja = {}
     for elt in graph.get_node_list():
         l_adja[elt.get_name()] = []
     for elt in graph.get_edge_list():
         l_adja[elt.get_destination()].append(elt.get_source())
-    sorted_list = tri_topo("\"1000154\"",l_adja)
+    sorted_list = tri_topo("\"" + str(node_number) + "\"",l_adja)
     for item in sorted_list:
         print(parser(graph.get_node(item)[0].obj_dict['attributes']['label']))
 
 
 
 
-# in_path = "./input/"
-#out_path = "./output/"
-#os.system("joern-parse " + in_path + "
-#joern-export --repr pdg --out " + out_path)
-slice("./outdir/1-pdg.dot")
+slice("./outdir/1-pdg.dot",1000154)
 
 
 

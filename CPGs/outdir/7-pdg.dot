@@ -1,7 +1,0 @@
-digraph <operator>.indirectIndexAccess {  
-"1000169" [label = "(METHOD,<operator>.indirectIndexAccess)" ]
-"1000170" [label = "(PARAM,p1)" ]
-"1000171" [label = "(PARAM,p2)" ]
-  "1000169" -> "1000170"  [ label = "DDG: "] 
-  "1000169" -> "1000171"  [ label = "DDG: "] 
-}
