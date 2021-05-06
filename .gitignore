@@ -1,7 +1,0 @@
-*.out
-trainData/*
-testData/*
-logs/*
-*/workspace/*
-__pycache__/*
-.gitignore
