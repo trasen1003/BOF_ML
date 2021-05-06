@@ -16,6 +16,7 @@ from tqdm import tqdm
 import gensim.models
 from tensorflow.keras import regularizers
 from sklearn import metrics
+import talos
 
 train_length = 10
 test_length = 10
@@ -261,16 +262,24 @@ tensorboard_callback = TensorBoard(
     update_freq="epoch",
 )
 
-def trainwithfit():
+def trainwithfit(lr,reg_coef):
+
+    dl_model = keras.Sequential(
+        [
+            layers.Conv1D(32, context_size, input_shape=(1500, vec_length),kernel_regularizer=regularizers.l1_l2(l1=reg_coef, l2=reg_coef)),
+            layers.GlobalMaxPooling1D(data_format="channels_first"),
+            layers.Dense(32,kernel_regularizer=regularizers.l1_l2(l1=reg_coef, l2=reg_coef)),
+            layers.Dense(2,activation='softmax',kernel_regularizer = regularizers.l1_l2(l1=reg_coef, l2=reg_coef))
+        ])
 
     dl_model.compile(
-        optimizer=optimizer,
+        optimizer = tf.optimizers.Adam(learning_rate=lr),
         loss='binary_crossentropy',
         metrics=['binary_accuracy'],
     )
 
     generatorTrain = MyDataset("trainData")
-    dl_model.fit(
+    history = dl_model.fit(
         x=generatorTrain,
         verbose=2,
         epochs=2,
@@ -278,9 +287,10 @@ def trainwithfit():
     )
 
     generatorTest = MyDataset("testData")
-    dl_model.evaluate(
+    res = dl_model.evaluate(
         x=generatorTest,
     )
+    return res
 
 def checkInstallation():
     if not os.path.isdir('trainData'):
@@ -425,7 +435,20 @@ def plot_with_matplotlib(x_vals, y_vals, labels,name):
 
 
 checkInstallation()
-trainwithfit()
+def try_hyperparam():
+    param = [10,1,0.5,0.1,0.05,0.01,0.005,0.001,0.0005,0.0001,0.00005,0.00001, 10**(-6),10**(-7)]
+    res = []
+    for reg in param:
+        res.append(trainwithfit(0.01,reg)[1])
+    print(res)
+    plt.xlabel("regularization coefficient")
+    plt.ylabel("validation accuracy")
+    plt.xscale('log')
+    plt.plot(param,res)
+    plt.show()
+
+try_hyperparam()
+#trainwithfit(0.01,0)
 
 
 vulns = tf.concat([runMIR("./testData/vuln/MIRl" + str(i)) for i in range(0,10)],0)
