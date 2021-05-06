@@ -3,3 +3,4 @@ trainData/*
 testData/*
 logs/*
 */workspace/*
+__pycache__/*

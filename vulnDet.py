@@ -24,7 +24,6 @@ file_length = 50
 context_size = 50
 batch_size = 20
 vec_length = 100
-print("0")
 
 lexer = lexers.get_lexer_by_name('cpp')
 #tokens form file
@@ -158,11 +157,6 @@ def save(categorie, vulnType):
             break
         print(f"word #{index}/{len(model.wv.index_to_key)} is {word}")
     print("done")
-
-    #vec_length = len(model.wv['('])
-    #print(vec_length)
-    #model.build_vocab(sentences, update=True , trim_rule = ak_rule)
-    #model.train(sentences, total_examples=1, epochs=1)
     l = len(sentences)
     print("Saving CNN training data")
     for i in tqdm(range(l//file_length)):
@@ -181,74 +175,7 @@ def save(categorie, vulnType):
 #save("clean")
 #save("vuln")
 
-
-def train():
-    nb_clean = 0
-    nb_vuln = 0
-    for i in range(train_length):
-        print(i)
-        t0 = time.time()
-        file_list = []
-        y = []
-        for j in range(batch_size):
-            vuln = randint(0,1)
-            if(vuln):
-                file_list.append('trainData/vuln/code%s.c'%str(nb_vuln))
-                y.append([0,1])
-                nb_vuln += 1
-
-            else:
-                file_list.append('trainData/clean/code%s.c'%str(nb_clean))
-                y.append([1,0])
-                nb_clean += 1
-        modelex = copy.deepcopy(model)
-        sentences = [extract_tokens(code) for code in file_list]
-        modelex.build_vocab(sentences, update=True , trim_rule = ak_rule)
-        modelex.train(sentences, total_examples=1, epochs=1)
-        x = [modelex.wv[elt] for elt in sentences]  
-        x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
-        print(len(x))
-        print(x[0].shape)
-        with tf.GradientTape() as tape:
-            logits = dl_model(x)
-            loss_value = loss(y, logits)
-            print(tf.reduce_mean(x))
-        gradients = tape.gradient(loss_value, dl_model.trainable_weights)
-        optimizer.apply_gradients(zip(gradients, dl_model.trainable_weights))
-        print(time.time() - t0)
-
-
-def trainfrompickle():
-    t0 = time.time()
-    nb_clean = 0
-    nb_vuln = 0
-    while(nb_clean < 1000 and nb_vuln < 1000):
-        print("a", "\n", nb_clean, "\n", nb_vuln)
-        t0 = time.time()
-        y = []
-        vuln = randint(0,1)
-        if(vuln):
-            file = 'trainData/vuln/MIRl%s'%str(nb_vuln)
-            y = [[0,1] for i in range(100)]
-            nb_vuln += 1
-
-        else:
-            file = 'trainData/clean/MIRl%s'%str(nb_clean)
-            y = [[1,0] for i in range(100)]
-            nb_clean += 1
-        x = pickle.load(open(file, 'rb'))
-        x = keras.preprocessing.sequence.pad_sequences(x, padding='post', dtype=float, maxlen=1500)
-        print(len(x))
-        print(x[0].shape)
-        with tf.GradientTape() as tape:
-            logits = dl_model(x)
-            print(logits.shape)
-            loss_value = loss(y, logits)
-            print(tf.reduce_mean(x))
-        gradients = tape.gradient(loss_value, dl_model.trainable_weights)
-        optimizer.apply_gradients(zip(gradients, dl_model.trainable_weights))
-        print(time.time() - t0)
-
+#logs for tensorboard
 from tensorflow.keras.callbacks import TensorBoard 
 import datetime
 log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -290,7 +217,7 @@ def trainwithfit(lr,reg_coef):
     res = dl_model.evaluate(
         x=generatorTest,
     )
-    return res
+    return (dl_model,res)
 
 def checkInstallation():
     if not os.path.isdir('trainData'):
@@ -447,8 +374,7 @@ def try_hyperparam():
     plt.plot(param,res)
     plt.show()
 
-try_hyperparam()
-#trainwithfit(0.01,0)
+dl_model,res = trainwithfit(0.01,0.01)
 
 
 vulns = tf.concat([runMIR("./testData/vuln/MIRl" + str(i)) for i in range(0,10)],0)
@@ -464,9 +390,9 @@ for elt in scores:
         y_pred.append(1)
     else:
         y_pred.append(0)
-print(metrics.recall_score(y,y_pred))
-print(metrics.precision_score(y,y_pred))
-print(metrics.f1_score(y,y_pred))
+print("recall : ", metrics.recall_score(y,y_pred))
+print("precision : ", metrics.precision_score(y,y_pred))
+print("f1_score : ", metrics.f1_score(y,y_pred))
 plt.plot(fpr,tpr)
 plt.xlabel("false positive rate")
 plt.ylabel("true positive rate")
